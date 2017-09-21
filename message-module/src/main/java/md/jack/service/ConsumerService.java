@@ -5,4 +5,5 @@ import md.jack.service.abs.EntityService;
 
 public interface ConsumerService extends EntityService<Consumer>
 {
+    Consumer getByToken(String token);
 }

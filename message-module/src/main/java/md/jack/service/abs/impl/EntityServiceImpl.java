@@ -13,7 +13,7 @@ public abstract class EntityServiceImpl <E extends AbstractEntity, R extends Jpa
         implements EntityService<E>
 {
     @Autowired
-    private R repository;
+    protected R repository;
 
     @Override
     public void add(final E entity)

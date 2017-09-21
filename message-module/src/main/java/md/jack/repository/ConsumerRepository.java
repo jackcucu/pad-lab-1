@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ConsumerRepository extends JpaRepository<Consumer, Long>
 {
+    Consumer getByRegistrationToken(String registrationToken);
 }
