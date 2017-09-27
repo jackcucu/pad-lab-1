@@ -32,6 +32,7 @@ public class Client
                     message.setTopic("md.jack.topic");
 
                     final String marshall = new JsonMarshaller().marshall(message);
+                    System.out.println(marshall);
                     writer.println(marshall);
                     writer.flush();
                     executorService.execute(new Publisher(clientSocket));
