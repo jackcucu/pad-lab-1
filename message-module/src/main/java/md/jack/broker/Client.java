@@ -58,9 +58,13 @@ public class Client implements Runnable
                 while ((message = reader.readLine()) != null)
                 {
                     final Message payload = new JsonMarshaller().unmarshall(message);
-
                     if (payload.getClientType() == PUBLISHER)
                     {
+                        if (payload.isRegister())
+                        {
+                            socket.close();
+                            break;
+                        }
                         executeIfElse(
                                 () -> topics.containsKey(payload.getTopic()),
                                 () -> topics.get(payload.getTopic())._1().add(payload),
@@ -69,6 +73,12 @@ public class Client implements Runnable
                     }
                     else if (payload.getClientType() == SUBSCRIBER)
                     {
+                        if (payload.isRegister())
+                        {
+                            topics.get(payload.getTopic())._2().removeIf(it -> it.equals(this));
+                            socket.close();
+                            break;
+                        }
                         topics.get(payload.getTopic())._2().add(this);
                     }
                 }
