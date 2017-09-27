@@ -10,14 +10,16 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import static md.jack.model.ClientType.PUBLISHER;
+
 class Publisher implements Runnable
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(Publisher.class);
-    private Socket clientSocket = null;
+    private Socket socket;
 
-    Publisher(final Socket clientSocket)
+    Publisher(final Socket socket)
     {
-        this.clientSocket = clientSocket;
+        this.socket = socket;
     }
 
     public void run()
@@ -25,13 +27,13 @@ class Publisher implements Runnable
         LOGGER.info("Hi Publisher");
         try
         {
-            if (clientSocket.isConnected())
+            if (socket.isConnected())
             {
                 LOGGER.info("Client connected to {} on port {}",
-                        clientSocket.getInetAddress(),
-                        clientSocket.getPort());
+                        socket.getInetAddress(),
+                        socket.getPort());
 
-                final PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
+                final PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
                 final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
                 while (true)
@@ -40,19 +42,20 @@ class Publisher implements Runnable
 
                     final Message message = new Message();
                     message.setName("Eugene");
+                    message.setClientType(PUBLISHER);
+                    message.setTopic("md.jack.topic");
                     message.setPayload(reader.readLine());
-
-                    if (message.getPayload().equals("EXIT"))
-                    {
-                        break;
-                    }
 
                     final String marshall = new JsonMarshaller().marshall(message);
                     writer.println(marshall);
                     writer.flush();
 
+                    if (message.getPayload().equals("EXIT"))
+                    {
+                        break;
+                    }
                 }
-                clientSocket.close();
+                socket.close();
             }
         }
         catch (Exception exception)

@@ -1,4 +1,4 @@
-package md.jack.broker;
+package md.jack.model;
 
 public enum ClientType
 {

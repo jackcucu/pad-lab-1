@@ -4,7 +4,6 @@ import javaslang.Tuple;
 import javaslang.Tuple2;
 import md.jack.marshalling.JsonMarshaller;
 import md.jack.model.Message;
-import md.jack.utils.FunctionalUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,8 +20,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static md.jack.broker.ClientType.PUBLISHER;
-import static md.jack.broker.ClientType.SUBSCRIBER;
+import static md.jack.model.ClientType.PUBLISHER;
+import static md.jack.model.ClientType.SUBSCRIBER;
 import static md.jack.utils.Constants.Server.BIND_PORT;
 import static md.jack.utils.FunctionalUtils.executeIfElse;
 
@@ -34,7 +33,7 @@ public class Server
     public static void main(String[] args) throws IOException
     {
         System.out.println("Server waiting for connection on port " + BIND_PORT);
-        ServerSocket serverSocket = new ServerSocket(BIND_PORT);
+        final ServerSocket serverSocket = new ServerSocket(BIND_PORT);
 
         while (true)
         {
