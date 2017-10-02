@@ -1,12 +1,11 @@
 package md.jack.client;
 
 import md.jack.marshalling.JsonMarshaller;
-import md.jack.model.Message;
+import md.jack.model.MessageDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -31,7 +30,7 @@ class Subscriber
         {
             final BufferedReader reader = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
             final PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-            final Message payload = new Message();
+            final MessageDto payload = new MessageDto();
             payload.setTopic("md.jack.topic");
             payload.setClientType(SUBSCRIBER);
             getRuntime().addShutdownHook(new ProcessorHook(socket, payload));
@@ -43,7 +42,7 @@ class Subscriber
 
             while ((message = reader.readLine()) != null)
             {
-                final Message unmarshall = new JsonMarshaller().unmarshall(message);
+                final MessageDto unmarshall = new JsonMarshaller().unmarshall(message);
                 System.out.println(unmarshall.getName() + " " + unmarshall.getPayload());
             }
         }

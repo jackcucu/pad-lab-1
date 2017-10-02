@@ -1,13 +1,13 @@
 package md.jack.marshalling;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import md.jack.model.Message;
+import md.jack.model.MessageDto;
 
 import java.io.IOException;
 
 public interface ObjectMarshaller
 {
-    String marshall(Message message) throws JsonProcessingException;
+    String marshall(MessageDto message) throws JsonProcessingException;
 
-    Message unmarshall(String message) throws IOException;
+    MessageDto unmarshall(String message) throws IOException;
 }

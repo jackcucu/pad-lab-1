@@ -1,18 +1,18 @@
 package md.jack.marshalling;
 
 
-import md.jack.model.Message;
+import md.jack.dto.MessageDto;
 
 public class XmlMarshaller implements ObjectMarshaller
 {
     @Override
-    public String marshall(final Message message)
+    public String marshall(final MessageDto message)
     {
         return null;
     }
 
     @Override
-    public Message unmarshall(final String message)
+    public MessageDto unmarshall(final String message)
     {
         return null;
     }

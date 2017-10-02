@@ -1,6 +1,8 @@
-package md.jack.model;
+package md.jack.dto;
 
-public class Message
+import md.jack.model.ClientType;
+
+public class MessageDto
 {
     private String name;
 

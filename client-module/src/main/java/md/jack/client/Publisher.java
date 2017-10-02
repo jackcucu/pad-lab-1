@@ -1,7 +1,7 @@
 package md.jack.client;
 
 import md.jack.marshalling.JsonMarshaller;
-import md.jack.model.Message;
+import md.jack.model.MessageDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +37,7 @@ class Publisher
                 final PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
                 final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
-                final Message message = new Message();
+                final MessageDto message = new MessageDto();
                 message.setClientType(PUBLISHER);
                 message.setTopic("md.jack.topic");
                 getRuntime().addShutdownHook(new ProcessorHook(socket, message));
@@ -51,7 +51,7 @@ class Publisher
                 {
                     System.out.println("Type your message to send to server..type 'EXIT' to exit");
 
-                    final Message payload = new Message();
+                    final MessageDto payload = new MessageDto();
                     payload.setName("Eugene");
                     payload.setClientType(PUBLISHER);
                     payload.setTopic("md.jack.topic");

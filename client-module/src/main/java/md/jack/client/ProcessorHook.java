@@ -1,7 +1,7 @@
 package md.jack.client;
 
 import md.jack.marshalling.JsonMarshaller;
-import md.jack.model.Message;
+import md.jack.model.MessageDto;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -12,9 +12,9 @@ public class ProcessorHook extends Thread
 
     private Socket socket;
 
-    private Message message;
+    private MessageDto message;
 
-    ProcessorHook(final Socket socket, final Message message)
+    ProcessorHook(final Socket socket, final MessageDto message)
     {
         this.socket = socket;
         this.message = message;
