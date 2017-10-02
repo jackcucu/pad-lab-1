@@ -1,10 +1,12 @@
 package md.jack.broker;
 
-import javafx.concurrent.Task;
 import javaslang.Tuple;
 import javaslang.Tuple2;
+import md.jack.dto.MessageDto;
 import md.jack.marshalling.JsonMarshaller;
-import md.jack.model.Message;
+import md.jack.model.db.Topic;
+import md.jack.service.MessageService;
+import md.jack.service.TopicService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.TaskExecutor;
@@ -28,10 +30,16 @@ import static md.jack.utils.FunctionalUtils.executeIfElse;
 public class Client implements Runnable
 {
     @Autowired
-    private Map<String, Tuple2<BlockingQueue<Message>, List<Client>>> topics;
+    private Map<String, Tuple2<BlockingQueue<MessageDto>, List<Client>>> topics;
 
     @Autowired
     private TaskExecutor taskExecutor;
+
+    @Autowired
+    private MessageService messageService;
+
+    @Autowired
+    private TopicService topicService;
 
     private Socket socket;
 
@@ -57,10 +65,10 @@ public class Client implements Runnable
             {
                 while ((message = reader.readLine()) != null)
                 {
-                    final Message payload = new JsonMarshaller().unmarshall(message);
+                    final MessageDto payload = new JsonMarshaller().unmarshall(message);
                     if (payload.getClientType() == PUBLISHER)
                     {
-                        if (payload.isRegister())
+                        if (payload.isClosing())
                         {
                             socket.close();
                             break;
@@ -73,7 +81,7 @@ public class Client implements Runnable
                     }
                     else if (payload.getClientType() == SUBSCRIBER)
                     {
-                        if (payload.isRegister())
+                        if (payload.isClosing())
                         {
                             topics.get(payload.getTopic())._2().removeIf(it -> it.equals(this));
                             socket.close();
@@ -91,13 +99,19 @@ public class Client implements Runnable
         }
     }
 
-    private void buildQueue(final Message payload)
+    private void buildQueue(final MessageDto payload)
     {
-        final BlockingQueue<Message> channel = new ArrayBlockingQueue<>(1024);
+        final BlockingQueue<MessageDto> channel = new ArrayBlockingQueue<>(1024);
         final List<Client> subscribers = new CopyOnWriteArrayList<>();
 
         taskExecutor.execute(new AsyncWriter(channel, subscribers));
 
         topics.put(payload.getTopic(), Tuple.of(channel, subscribers));
+
+        final Topic topic = Topic.getBuilder()
+                .name(payload.getTopic())
+                .build();
+
+        topicService.add(topic);
     }
 }
