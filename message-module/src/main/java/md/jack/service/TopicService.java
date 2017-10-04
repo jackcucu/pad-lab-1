@@ -5,4 +5,7 @@ import md.jack.service.abs.EntityService;
 
 public interface TopicService extends EntityService<Topic>
 {
+    void deleteByName(String name);
+
+    Topic getByName(String name);
 }
