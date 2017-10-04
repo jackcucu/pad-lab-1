@@ -2,6 +2,8 @@ package md.jack.model.db;
 
 import md.jack.model.db.abs.AbstractEntity;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
@@ -15,10 +17,11 @@ import java.util.Set;
 @Table(name = "TOPIC")
 public class Topic extends AbstractEntity
 {
+    @Column(unique = true)
     private String name;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "CONSUMER_TOPIC",
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinTable(name = "MESSAGE_TOPIC",
             joinColumns = @JoinColumn(name = "topic_id", nullable = false),
             inverseJoinColumns = @JoinColumn(name = "message_id"))
     private Set<Message> messages = new HashSet<>();

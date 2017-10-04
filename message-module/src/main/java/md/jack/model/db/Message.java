@@ -65,7 +65,7 @@ public class Message extends AbstractEntity
         this.topics = topics;
     }
 
-    private static class Builder
+    public static class Builder
     {
         private Message message;
 

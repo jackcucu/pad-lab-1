@@ -2,6 +2,8 @@ package md.jack.model;
 
 public class MessageDto
 {
+    private Long id;
+
     private String name;
 
     private String payload;
@@ -10,7 +12,17 @@ public class MessageDto
 
     private ClientType clientType;
 
-    private boolean isRegister;
+    private boolean isClosing;
+
+    public Long getId()
+    {
+        return id;
+    }
+
+    public void setId(final Long id)
+    {
+        this.id = id;
+    }
 
     public String getTopic()
     {
@@ -42,14 +54,14 @@ public class MessageDto
         this.payload = payload;
     }
 
-    public boolean isRegister()
+    public boolean isClosing()
     {
-        return isRegister;
+        return isClosing;
     }
 
-    public void setRegister(final boolean register)
+    public void setClosing(final boolean closing)
     {
-        isRegister = register;
+        isClosing = closing;
     }
 
     public ClientType getClientType()

@@ -14,6 +14,7 @@ public class MessageToMessageDtoConverter implements Converter<Message, MessageD
         final MessageDto target = new MessageDto();
 
         target.setPayload(source.getPayload());
+        target.setId(source.getId());
 
         return target;
     }

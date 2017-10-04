@@ -26,7 +26,7 @@ public class ProcessorHook extends Thread
         try
         {
             final PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-            message.setRegister(true);
+            message.setClosing(true);
             final String marshall = new JsonMarshaller().marshall(message);
             writer.println(marshall);
             socket.close();
