@@ -9,4 +9,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class TopicServiceImpl extends EntityServiceImpl<Topic, TopicRepository> implements TopicService
 {
+    @Override
+    public void deleteByName(final String name)
+    {
+        repository.deleteByName(name);
+    }
+
+    @Override
+    public Topic getByName(final String name)
+    {
+        return repository.findByName(name);
+    }
 }

@@ -2,30 +2,29 @@ package md.jack.model.db;
 
 import md.jack.model.db.abs.AbstractEntity;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
 @Table(name = "TOPIC")
 public class Topic extends AbstractEntity
 {
+    @Column(unique = true)
     private String name;
 
-    @ManyToOne
-    @JoinColumn(name = "owner_id", nullable = false)
-    private Consumer consumer;
-
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "CONSUMER_TOPIC",
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinTable(name = "MESSAGE_TOPIC",
             joinColumns = @JoinColumn(name = "topic_id", nullable = false),
-            inverseJoinColumns = @JoinColumn(name = "consumer_id"))
-    private Set<Consumer> consumers;
+            inverseJoinColumns = @JoinColumn(name = "message_id"))
+    private Set<Message> messages = new HashSet<>();
 
     public String getName()
     {
@@ -37,23 +36,55 @@ public class Topic extends AbstractEntity
         this.name = name;
     }
 
-    public Consumer getConsumer()
+    public Set<Message> getMessages()
     {
-        return consumer;
+        return messages;
     }
 
-    public void setConsumer(final Consumer consumer)
+    public void setMessages(final Set<Message> messages)
     {
-        this.consumer = consumer;
+        this.messages = messages;
     }
 
-    public Set<Consumer> getConsumers()
+    public static Builder getBuilder()
     {
-        return consumers;
+        return new Builder();
     }
 
-    public void setConsumers(final Set<Consumer> consumers)
+    public static Builder getBuilder(final Topic topic)
     {
-        this.consumers = consumers;
+        return new Builder(topic);
+    }
+
+    public static class Builder
+    {
+        private Topic topic;
+
+        Builder()
+        {
+            topic = new Topic();
+        }
+
+        Builder(final Topic topic)
+        {
+            this.topic = topic;
+        }
+
+        public Builder name(final String name)
+        {
+            topic.setName(name);
+            return this;
+        }
+
+        public Builder messages(final Set<Message> messages)
+        {
+            topic.setMessages(messages);
+            return this;
+        }
+
+        public Topic build()
+        {
+            return topic;
+        }
     }
 }
