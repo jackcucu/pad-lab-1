@@ -91,8 +91,8 @@ public class Client implements Runnable
                         if (payload.isClosing())
                         {
                             LOGGER.warn("Connection with client closed un properly last will {}", payload.getPayload());
-                            topics.get(payload.getTopic())._3().removeIf(it -> it.equals(this));
                             socket.close();
+                            topics.get(payload.getTopic())._3().removeIf(it -> it.equals(this));
                             break;
                         }
 
@@ -120,7 +120,7 @@ public class Client implements Runnable
 
         if (!queue._1())
         {
-            taskExecutor.execute(new AsyncWriter(queue._2(), queue._3()));
+            taskExecutor.execute(new AsyncWriter(queue._2(), queue._3(), false));
             topics.computeIfPresent(payload.getTopic(), (key, it) -> queue.update1(true));
         }
 
@@ -145,11 +145,14 @@ public class Client implements Runnable
     private void buildQueue(final MessageDto payload)
     {
         final BlockingQueue<MessageDto> channel = new ArrayBlockingQueue<>(1024);
+
+        channel.add(payload);
+
         final List<Client> subscribers = new CopyOnWriteArrayList<>();
 
         topics.put(payload.getTopic(), Tuple.of(true, channel, subscribers));
 
-        taskExecutor.execute(new AsyncWriter(channel, subscribers));
+        taskExecutor.execute(new AsyncWriter(channel, subscribers, false));
 
         final Topic topic = Topic.getBuilder()
                 .name(payload.getTopic())

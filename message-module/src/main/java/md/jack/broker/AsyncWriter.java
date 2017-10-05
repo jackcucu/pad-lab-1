@@ -26,9 +26,9 @@ class AsyncWriter implements Runnable
     {
         while (true)
         {
-            while (!subscribers.isEmpty())
+            while (!channel.isEmpty())
             {
-                while (!channel.isEmpty())
+                while (!subscribers.isEmpty())
                 {
                     for (Client subscriber : subscribers)
                     {
@@ -50,6 +50,20 @@ class AsyncWriter implements Runnable
                     }
                     channel.poll();
                 }
+            }
+            if (!isPersistent)
+            {
+                subscribers.forEach(it -> {
+                    try
+                    {
+                        it.getSocket().close();
+                    }
+                    catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                });
+                break;
             }
         }
     }

@@ -1,8 +1,6 @@
 package md.jack.client;
 
 import java.net.Socket;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static md.jack.utils.Constants.Server.BIND_PORT;
 
@@ -34,10 +32,6 @@ public class Client
         catch (Exception e)
         {
             System.out.println(e.getMessage());
-        }
-        finally
-        {
-            System.out.println("asda");
         }
     }
 }

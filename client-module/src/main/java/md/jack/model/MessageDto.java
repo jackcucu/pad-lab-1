@@ -10,7 +10,7 @@ public class MessageDto
 
     private ClientType clientType;
 
-    private TransportingType transportingtype;
+    private TransportingType transportingType;
 
     private boolean isClosing;
 
@@ -56,12 +56,12 @@ public class MessageDto
 
     public TransportingType getTransportingType()
     {
-        return transportingtype;
+        return transportingType;
     }
 
     public void setTransportingType(final TransportingType transportingType)
     {
-        this.transportingtype = transportingType;
+        this.transportingType = transportingType;
     }
 
     public boolean isClosing()
