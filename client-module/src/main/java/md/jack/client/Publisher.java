@@ -40,14 +40,14 @@ class Publisher
                 final MessageDto message = new MessageDto();
                 message.setClientType(PUBLISHER);
                 message.setTopic("md.jack.topic");
+                message.setClosing(true);
                 getRuntime().addShutdownHook(new ProcessorHook(socket, message));
 
                 final String marshall = new JsonMarshaller().marshall(message);
-                System.out.println(marshall);
                 writer.println(marshall);
                 writer.flush();
 
-                while (true)
+                while (socket.isConnected())
                 {
                     System.out.println("Type your message to send to server..type 'EXIT' to exit");
 

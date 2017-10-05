@@ -1,7 +1,7 @@
 package md.jack;
 
 import javaslang.Tuple;
-import javaslang.Tuple2;
+import javaslang.Tuple3;
 import md.jack.broker.Client;
 import md.jack.dto.MessageDto;
 import md.jack.model.db.Message;
@@ -46,22 +46,21 @@ public class MessageBrokerApplication
 	}
 
 	@Bean
-	public Map<String, Tuple2<BlockingQueue<MessageDto>, List<Client>>> topics()
+	public Map<String, Tuple3<Boolean, BlockingQueue<MessageDto>, List<Client>>> topics()
 	{
 		return topicService.getAll().stream()
 				.collect(toMap(Topic::getName, this::buildTuple));
 	}
 
-	private Tuple2<BlockingQueue<MessageDto>, List<Client>> buildTuple(final Topic topic)
+	private Tuple3<Boolean, BlockingQueue<MessageDto>, List<Client>> buildTuple(final Topic topic)
 	{
 		final BlockingQueue<MessageDto> channel = new ArrayBlockingQueue<>(1024);
 
 		topic.getMessages().stream()
 				.filter(it -> !it.isConsumed())
 				.map(messageDtoConverter::convert)
-				.peek(channel::add)
-				.close();
+				.forEach(channel::add);
 
-		return Tuple.of(channel, new CopyOnWriteArrayList<Client>());
+		return Tuple.of(false, channel, new CopyOnWriteArrayList<Client>());
 	}
 }

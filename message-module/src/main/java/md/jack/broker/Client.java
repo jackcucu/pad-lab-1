@@ -1,9 +1,10 @@
 package md.jack.broker;
 
 import javaslang.Tuple;
-import javaslang.Tuple2;
+import javaslang.Tuple3;
 import md.jack.dto.MessageDto;
 import md.jack.marshalling.JsonMarshaller;
+import md.jack.model.db.Message;
 import md.jack.model.db.Topic;
 import md.jack.service.MessageService;
 import md.jack.service.TopicService;
@@ -21,6 +22,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static java.util.Optional.ofNullable;
 import static md.jack.model.ClientType.PUBLISHER;
 import static md.jack.model.ClientType.SUBSCRIBER;
 import static md.jack.utils.FunctionalUtils.executeIfElse;
@@ -30,7 +32,7 @@ import static md.jack.utils.FunctionalUtils.executeIfElse;
 public class Client implements Runnable
 {
     @Autowired
-    private Map<String, Tuple2<BlockingQueue<MessageDto>, List<Client>>> topics;
+    private Map<String, Tuple3<Boolean, BlockingQueue<MessageDto>, List<Client>>> topics;
 
     @Autowired
     private TaskExecutor taskExecutor;
@@ -75,7 +77,7 @@ public class Client implements Runnable
                         }
                         executeIfElse(
                                 () -> topics.containsKey(payload.getTopic()),
-                                () -> topics.get(payload.getTopic())._1().add(payload),
+                                () -> addToQueue(payload),
                                 () -> buildQueue(payload)
                         );
                     }
@@ -83,11 +85,11 @@ public class Client implements Runnable
                     {
                         if (payload.isClosing())
                         {
-                            topics.get(payload.getTopic())._2().removeIf(it -> it.equals(this));
+                            topics.get(payload.getTopic())._3().removeIf(it -> it.equals(this));
                             socket.close();
                             break;
                         }
-                        topics.get(payload.getTopic())._2().add(this);
+                        topics.get(payload.getTopic())._3().add(this);
                     }
                 }
             }
@@ -99,14 +101,39 @@ public class Client implements Runnable
         }
     }
 
+    private void addToQueue(final MessageDto payload)
+    {
+        final Tuple3<Boolean, BlockingQueue<MessageDto>, List<Client>> queue = topics.get(payload.getTopic());
+
+        if (!queue._1())
+        {
+            taskExecutor.execute(new AsyncWriter(queue._2(), queue._3()));
+            topics.computeIfPresent(payload.getTopic(), (key, it) -> queue.update1(true));
+        }
+
+        ofNullable(payload.getPayload()).ifPresent(it -> {
+            queue._2().add(payload);
+            saveMessage(payload);
+        });
+    }
+
+    private void saveMessage(final MessageDto payload)
+    {
+        final Topic topic = topicService.getByName(payload.getTopic());
+        final Message message = new Message();
+        message.setPayload(payload.getPayload());
+        message.getTopics().add(topic);
+        messageService.add(message);
+    }
+
     private void buildQueue(final MessageDto payload)
     {
         final BlockingQueue<MessageDto> channel = new ArrayBlockingQueue<>(1024);
         final List<Client> subscribers = new CopyOnWriteArrayList<>();
 
-        taskExecutor.execute(new AsyncWriter(channel, subscribers));
+        topics.put(payload.getTopic(), Tuple.of(true, channel, subscribers));
 
-        topics.put(payload.getTopic(), Tuple.of(channel, subscribers));
+        taskExecutor.execute(new AsyncWriter(channel, subscribers));
 
         final Topic topic = Topic.getBuilder()
                 .name(payload.getTopic())
