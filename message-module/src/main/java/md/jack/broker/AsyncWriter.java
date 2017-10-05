@@ -12,11 +12,13 @@ class AsyncWriter implements Runnable
 {
     private BlockingQueue<MessageDto> channel;
     private List<Client> subscribers;
+    private boolean isPersistent;
 
-    AsyncWriter(BlockingQueue<MessageDto> channel, List<Client> subscribers)
+    AsyncWriter(BlockingQueue<MessageDto> channel, List<Client> subscribers, boolean isPersistent)
     {
         this.channel = channel;
         this.subscribers = subscribers;
+        this.isPersistent = isPersistent;
     }
 
     @Override
@@ -37,6 +39,7 @@ class AsyncWriter implements Runnable
 
                             final MessageDto message = channel.peek();
                             final String marshall = new JsonMarshaller().marshall(message);
+
                             writer.println(marshall);
                             writer.flush();
                         }

@@ -14,6 +14,8 @@ import java.util.Scanner;
 
 import static java.lang.Runtime.getRuntime;
 import static md.jack.model.ClientType.PUBLISHER;
+import static md.jack.model.TransportingType.NON_PERSISTENT;
+import static md.jack.model.TransportingType.PERSISTENT;
 
 class Publisher
 {
@@ -46,6 +48,17 @@ class Publisher
                 message.setClientType(PUBLISHER);
 
                 final String topic = getTopic(reader);
+
+                System.out.println("Make queue persistent(y/n) ? ");
+
+                if (reader.readLine().equalsIgnoreCase("y"))
+                {
+                    message.setTransportingType(PERSISTENT);
+                }
+                else
+                {
+                    message.setTransportingType(NON_PERSISTENT);
+                }
 
                 message.setTopic(topic);
 
@@ -88,6 +101,7 @@ class Publisher
         {
             System.out.println("Invalid topic format(org.dep.product.message_type)");
         }
+
         return topic;
     }
 
