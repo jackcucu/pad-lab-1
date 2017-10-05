@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Scanner;
 
 import static java.lang.Runtime.getRuntime;
 import static md.jack.model.ClientType.PUBLISHER;
@@ -22,6 +23,7 @@ class Publisher
     Publisher(final Socket socket)
     {
         this.socket = socket;
+        setLastWillAndTestament();
     }
 
     void run()
@@ -46,8 +48,6 @@ class Publisher
                 final String topic = getTopic(reader);
 
                 message.setTopic(topic);
-
-                getRuntime().addShutdownHook(new ProcessorHook(socket, message));
 
                 final String marshall = new JsonMarshaller().marshall(message);
                 writer.println(marshall);
@@ -89,5 +89,17 @@ class Publisher
             System.out.println("Invalid topic format(org.dep.product.message_type)");
         }
         return topic;
+    }
+
+    private void setLastWillAndTestament()
+    {
+        System.out.println("Last will ?");
+
+        final MessageDto payload = new MessageDto();
+        payload.setPayload(new Scanner(System.in).nextLine());
+        payload.setTopic("lastwill");
+        payload.setClientType(PUBLISHER);
+
+        getRuntime().addShutdownHook(new ProcessorHook(socket, payload));
     }
 }

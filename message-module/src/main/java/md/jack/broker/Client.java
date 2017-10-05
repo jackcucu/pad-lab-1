@@ -77,6 +77,7 @@ public class Client implements Runnable
                         if (payload.isClosing())
                         {
                             socket.close();
+                            LOGGER.warn("Connection with client closed un properly last will {}", payload.getPayload());
                             break;
                         }
                         executeIfElse(
@@ -132,9 +133,12 @@ public class Client implements Runnable
     private void saveMessage(final MessageDto payload)
     {
         final Topic topic = topicService.getByName(payload.getTopic());
+
         final Message message = new Message();
+
         message.setPayload(payload.getPayload());
         message.getTopics().add(topic);
+
         messageService.add(message);
     }
 

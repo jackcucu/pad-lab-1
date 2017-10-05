@@ -37,7 +37,6 @@ class AsyncWriter implements Runnable
 
                             final MessageDto message = channel.peek();
                             final String marshall = new JsonMarshaller().marshall(message);
-                            System.out.println("asdasd");
                             writer.println(marshall);
                             writer.flush();
                         }

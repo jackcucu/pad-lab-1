@@ -1,5 +1,6 @@
 package md.jack.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import md.jack.marshalling.JsonMarshaller;
 import md.jack.model.MessageDto;
 import org.slf4j.Logger;
@@ -33,12 +34,7 @@ class Subscriber
             final BufferedReader reader = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
             final PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
 
-            final MessageDto payload = new MessageDto();
-            payload.setTopic(getTopic());
-            payload.setClientType(SUBSCRIBER);
-
-            final String marshall = new JsonMarshaller().marshall(payload);
-            writer.println(marshall);
+            connectToBroker(writer);
 
             String message;
 
@@ -52,6 +48,16 @@ class Subscriber
         {
             LOGGER.error("Error {} with cause {}", exception.getMessage(), exception.getCause());
         }
+    }
+
+    private void connectToBroker(final PrintWriter writer) throws JsonProcessingException
+    {
+        final MessageDto payload = new MessageDto();
+        payload.setTopic(getTopic());
+        payload.setClientType(SUBSCRIBER);
+
+        final String marshall = new JsonMarshaller().marshall(payload);
+        writer.println(marshall);
     }
 
     private String getTopic()
@@ -71,12 +77,10 @@ class Subscriber
 
     private void setLastWillAndTestament()
     {
-        final Scanner scanner = new Scanner(System.in);
-
-        System.out.println("Last will ? : ");
+        System.out.println("Last will ?");
 
         final MessageDto payload = new MessageDto();
-        payload.setPayload(scanner.nextLine());
+        payload.setPayload(new Scanner(System.in).nextLine());
         payload.setTopic("lastwill");
         payload.setClientType(SUBSCRIBER);
 
