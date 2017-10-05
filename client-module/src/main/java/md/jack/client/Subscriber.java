@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Scanner;
 
 import static java.lang.Runtime.getRuntime;
 import static md.jack.model.ClientType.SUBSCRIBER;
@@ -21,34 +22,64 @@ class Subscriber
     Subscriber(final Socket socket)
     {
         this.socket = socket;
+        setLastWillAndTestament();
     }
 
-    public void run()
+    void run()
     {
         LOGGER.info("Hi Subscriber");
         try
         {
             final BufferedReader reader = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
             final PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+
             final MessageDto payload = new MessageDto();
-            payload.setTopic("md.jack.topic");
+            payload.setTopic(getTopic());
             payload.setClientType(SUBSCRIBER);
-            getRuntime().addShutdownHook(new ProcessorHook(socket, payload));
 
             final String marshall = new JsonMarshaller().marshall(payload);
             writer.println(marshall);
-            writer.flush();
+
             String message;
 
             while ((message = reader.readLine()) != null)
             {
                 final MessageDto unmarshall = new JsonMarshaller().unmarshall(message);
-                System.out.println(unmarshall.getName() + " " + unmarshall.getPayload());
+                System.out.println("message : " + unmarshall.getPayload());
             }
         }
         catch (Exception exception)
         {
             LOGGER.error("Error {} with cause {}", exception.getMessage(), exception.getCause());
         }
+    }
+
+    private String getTopic()
+    {
+        String topic;
+
+        System.out.println("Enter topic name(format org.dep.product.message_type)");
+
+        final Scanner scanner = new Scanner(System.in);
+
+        while (!(topic = scanner.nextLine()).matches(".*\\..*\\..*\\..*"))
+        {
+            System.out.println("Invalid topic format(org.dep.product.message_type)");
+        }
+        return topic;
+    }
+
+    private void setLastWillAndTestament()
+    {
+        final Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Last will ? : ");
+
+        final MessageDto payload = new MessageDto();
+        payload.setPayload(scanner.nextLine());
+        payload.setTopic("lastwill");
+        payload.setClientType(SUBSCRIBER);
+
+        getRuntime().addShutdownHook(new ProcessorHook(socket, payload));
     }
 }

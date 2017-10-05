@@ -8,6 +8,8 @@ import md.jack.model.db.Message;
 import md.jack.model.db.Topic;
 import md.jack.service.MessageService;
 import md.jack.service.TopicService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.TaskExecutor;
@@ -31,6 +33,8 @@ import static md.jack.utils.FunctionalUtils.executeIfElse;
 @Scope("prototype")
 public class Client implements Runnable
 {
+    private final static Logger LOGGER = LoggerFactory.getLogger(Client.class);
+
     @Autowired
     private Map<String, Tuple3<Boolean, BlockingQueue<MessageDto>, List<Client>>> topics;
 
@@ -85,11 +89,19 @@ public class Client implements Runnable
                     {
                         if (payload.isClosing())
                         {
+                            LOGGER.warn("Connection with client closed un properly last will {}", payload.getPayload());
                             topics.get(payload.getTopic())._3().removeIf(it -> it.equals(this));
                             socket.close();
                             break;
                         }
-                        topics.get(payload.getTopic())._3().add(this);
+
+                        final String regex = payload.getTopic()
+                                .replace(".", "\\.")
+                                .replace("*", ".*");
+
+                        topics.entrySet().stream()
+                                .filter(it -> it.getKey().matches(regex))
+                                .forEach(it -> it.getValue()._3().add(this));
                     }
                 }
             }

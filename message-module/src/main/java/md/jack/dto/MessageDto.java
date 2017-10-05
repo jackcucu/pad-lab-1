@@ -6,8 +6,6 @@ public class MessageDto
 {
     private Long id;
 
-    private String name;
-
     private String payload;
 
     private String topic;
@@ -34,16 +32,6 @@ public class MessageDto
     public void setTopic(final String topic)
     {
         this.topic = topic;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    public void setName(final String name)
-    {
-        this.name = name;
     }
 
     public String getPayload()
