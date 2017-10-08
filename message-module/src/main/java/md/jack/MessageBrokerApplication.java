@@ -2,10 +2,12 @@ package md.jack;
 
 import javaslang.Tuple;
 import javaslang.Tuple3;
+import md.jack.broker.AsyncWriter;
 import md.jack.broker.Client;
 import md.jack.dto.MessageDto;
 import md.jack.model.db.Message;
 import md.jack.model.db.Topic;
+import md.jack.service.MessageService;
 import md.jack.service.TopicService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -30,6 +32,9 @@ public class MessageBrokerApplication
 	private TopicService topicService;
 
 	@Autowired
+	private MessageService messageService;
+
+	@Autowired
 	private Converter<Message, MessageDto> messageDtoConverter;
 
 	public static void main(String[] args) {
@@ -46,21 +51,32 @@ public class MessageBrokerApplication
 	}
 
 	@Bean
-	public Map<String, Tuple3<Boolean, BlockingQueue<MessageDto>, List<Client>>> topics()
+	public Map<String, Tuple3<Boolean, BlockingQueue<Message>, List<Client>>> topics()
 	{
 		return topicService.getAll().stream()
 				.collect(toMap(Topic::getName, this::buildTuple));
 	}
 
-	private Tuple3<Boolean, BlockingQueue<MessageDto>, List<Client>> buildTuple(final Topic topic)
+	private Tuple3<Boolean, BlockingQueue<Message>, List<Client>> buildTuple(final Topic topic)
 	{
-		final BlockingQueue<MessageDto> channel = new ArrayBlockingQueue<>(1024);
+		final BlockingQueue<Message> channel = new ArrayBlockingQueue<>(1024);
 
 		topic.getMessages().stream()
 				.filter(it -> !it.isConsumed())
-				.map(messageDtoConverter::convert)
 				.forEach(channel::add);
 
-		return Tuple.of(false, channel, new CopyOnWriteArrayList<Client>());
+		final List<Client> clients = new CopyOnWriteArrayList<>();
+
+		final AsyncWriter asyncWriter = new AsyncWriter();
+
+		asyncWriter.setChannel(channel);
+		asyncWriter.setSubscribers(clients);
+		asyncWriter.setPersistent(true);
+		asyncWriter.setMessageDtoConverter(messageDtoConverter);
+		asyncWriter.setMessageService(messageService);
+
+		taskExecutor().execute(asyncWriter);
+
+		return Tuple.of(true, channel, clients);
 	}
 }
