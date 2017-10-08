@@ -2,6 +2,7 @@ package md.jack.client;
 
 import md.jack.marshalling.JsonMarshaller;
 import md.jack.model.MessageDto;
+import md.jack.model.TransportingType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,10 +11,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Scanner;
 
 import static java.lang.Runtime.getRuntime;
 import static md.jack.model.ClientType.PUBLISHER;
+import static md.jack.model.TransportingType.NON_PERSISTENT;
+import static md.jack.model.TransportingType.PERSISTENT;
 
 class Publisher
 {
@@ -23,7 +25,6 @@ class Publisher
     Publisher(final Socket socket)
     {
         this.socket = socket;
-        setLastWillAndTestament();
     }
 
     void run()
@@ -47,10 +48,19 @@ class Publisher
 
                 final String topic = getTopic(reader);
 
+                System.out.println("Make queue persistent(y/n) ? ");
+
+                final TransportingType transportingType = getTransportingType(reader);
+
+                message.setTransportingType(transportingType);
                 message.setTopic(topic);
 
                 final String marshall = new JsonMarshaller().marshall(message);
                 writer.println(marshall);
+
+                System.out.println("Last will ?");
+                message.setPayload(reader.readLine());
+                getRuntime().addShutdownHook(new ProcessorHook(socket, message));
 
                 while (socket.isConnected())
                 {
@@ -59,6 +69,7 @@ class Publisher
                     final MessageDto payload = new MessageDto();
                     payload.setClientType(PUBLISHER);
                     payload.setTopic(topic);
+                    payload.setTransportingType(transportingType);
                     payload.setPayload(reader.readLine());
 
                     final String send = new JsonMarshaller().marshall(payload);
@@ -78,6 +89,18 @@ class Publisher
         }
     }
 
+    private TransportingType getTransportingType(final BufferedReader reader) throws IOException
+    {
+        if (reader.readLine().equalsIgnoreCase("y"))
+        {
+            return PERSISTENT;
+        }
+        else
+        {
+            return NON_PERSISTENT;
+        }
+    }
+
     private String getTopic(final BufferedReader reader) throws IOException
     {
         String topic;
@@ -88,18 +111,7 @@ class Publisher
         {
             System.out.println("Invalid topic format(org.dep.product.message_type)");
         }
+
         return topic;
-    }
-
-    private void setLastWillAndTestament()
-    {
-        System.out.println("Last will ?");
-
-        final MessageDto payload = new MessageDto();
-        payload.setPayload(new Scanner(System.in).nextLine());
-        payload.setTopic("lastwill");
-        payload.setClientType(PUBLISHER);
-
-        getRuntime().addShutdownHook(new ProcessorHook(socket, payload));
     }
 }

@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Component;
 
@@ -24,9 +25,9 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static java.util.Optional.ofNullable;
 import static md.jack.model.ClientType.PUBLISHER;
 import static md.jack.model.ClientType.SUBSCRIBER;
+import static md.jack.model.TransportingType.PERSISTENT;
 import static md.jack.utils.FunctionalUtils.executeIfElse;
 
 @Component
@@ -36,7 +37,13 @@ public class Client implements Runnable
     private final static Logger LOGGER = LoggerFactory.getLogger(Client.class);
 
     @Autowired
-    private Map<String, Tuple3<Boolean, BlockingQueue<MessageDto>, List<Client>>> topics;
+    private Converter<MessageDto, Message> converter;
+
+    @Autowired
+    private Converter<Message, MessageDto> messageDtoConverter;
+
+    @Autowired
+    private Map<String, Tuple3<Boolean, BlockingQueue<Message>, List<Client>>> topics;
 
     @Autowired
     private TaskExecutor taskExecutor;
@@ -67,19 +74,29 @@ public class Client implements Runnable
             final BufferedReader reader = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
 
             String message;
+
             while (true)
             {
                 while ((message = reader.readLine()) != null)
                 {
                     final MessageDto payload = new JsonMarshaller().unmarshall(message);
+
                     if (payload.getClientType() == PUBLISHER)
                     {
                         if (payload.isClosing())
                         {
                             socket.close();
-                            LOGGER.warn("Connection with client closed un properly last will {}", payload.getPayload());
+
+                            LOGGER.warn(
+                                    "Connection with publisher from {} on port {} closed improperly last will {}",
+                                    socket.getInetAddress(),
+                                    socket.getPort(),
+                                    payload.getPayload());
                             break;
                         }
+
+                        cleanUp(payload);
+
                         executeIfElse(
                                 () -> topics.containsKey(payload.getTopic()),
                                 () -> addToQueue(payload),
@@ -88,17 +105,26 @@ public class Client implements Runnable
                     }
                     else if (payload.getClientType() == SUBSCRIBER)
                     {
-                        if (payload.isClosing())
-                        {
-                            LOGGER.warn("Connection with client closed un properly last will {}", payload.getPayload());
-                            topics.get(payload.getTopic())._3().removeIf(it -> it.equals(this));
-                            socket.close();
-                            break;
-                        }
-
                         final String regex = payload.getTopic()
                                 .replace(".", "\\.")
                                 .replace("*", ".*");
+
+                        if (payload.isClosing())
+                        {
+                            LOGGER.warn(
+                                    "Connection with subscriber from {} on port {} closed improperly last will {}",
+                                    socket.getInetAddress(),
+                                    socket.getPort(),
+                                    payload.getPayload());
+
+                            topics.entrySet().stream()
+                                    .filter(it -> it.getKey().matches(regex))
+                                    .map(it -> it.getValue()._3())
+                                    .forEach(it -> it.removeIf(o -> o.equals(this)));
+
+                            socket.close();
+                            break;
+                        }
 
                         topics.entrySet().stream()
                                 .filter(it -> it.getKey().matches(regex))
@@ -114,23 +140,38 @@ public class Client implements Runnable
         }
     }
 
-    private void addToQueue(final MessageDto payload)
+    private void cleanUp(final MessageDto payload)
     {
-        final Tuple3<Boolean, BlockingQueue<MessageDto>, List<Client>> queue = topics.get(payload.getTopic());
-
-        if (!queue._1())
+        if (topics.containsKey(payload.getTopic()))
         {
-            taskExecutor.execute(new AsyncWriter(queue._2(), queue._3()));
-            topics.computeIfPresent(payload.getTopic(), (key, it) -> queue.update1(true));
-        }
+            final Tuple3<Boolean, BlockingQueue<Message>, List<Client>> queue = topics.get(payload
+                    .getTopic());
 
-        ofNullable(payload.getPayload()).ifPresent(it -> {
-            queue._2().add(payload);
-            saveMessage(payload);
-        });
+            if (!queue._1() && queue._2().isEmpty() && queue._3().isEmpty())
+            {
+                topics.remove(payload.getTopic());
+            }
+        }
     }
 
-    private void saveMessage(final MessageDto payload)
+    private void addToQueue(final MessageDto payload)
+    {
+        final Tuple3<Boolean, BlockingQueue<Message>, List<Client>> queue = topics.get(payload.getTopic());
+
+        if (queue._1())
+        {
+            final Message message = saveMessage(payload);
+
+            queue._2().add(message);
+        }
+        else
+        {
+            queue._2().add(converter.convert(payload));
+        }
+
+    }
+
+    private Message saveMessage(final MessageDto payload)
     {
         final Topic topic = topicService.getByName(payload.getTopic());
 
@@ -139,22 +180,43 @@ public class Client implements Runnable
         message.setPayload(payload.getPayload());
         message.getTopics().add(topic);
 
-        messageService.add(message);
+        if (message.getPayload() != null)
+        {
+            messageService.add(message);
+        }
+
+        return message;
     }
 
     private void buildQueue(final MessageDto payload)
     {
-        final BlockingQueue<MessageDto> channel = new ArrayBlockingQueue<>(1024);
+        final BlockingQueue<Message> channel = new ArrayBlockingQueue<>(1024);
+
         final List<Client> subscribers = new CopyOnWriteArrayList<>();
 
-        topics.put(payload.getTopic(), Tuple.of(true, channel, subscribers));
+        channel.add(converter.convert(payload));
 
-        taskExecutor.execute(new AsyncWriter(channel, subscribers));
+        final boolean isPersistent = payload.getTransportingType().equals(PERSISTENT);
 
-        final Topic topic = Topic.getBuilder()
-                .name(payload.getTopic())
-                .build();
+        topics.put(payload.getTopic(), Tuple.of(isPersistent, channel, subscribers));
 
-        topicService.add(topic);
+        if (isPersistent)
+        {
+            final Topic topic = Topic.getBuilder()
+                    .name(payload.getTopic())
+                    .build();
+
+            topicService.add(topic);
+        }
+
+        final AsyncWriter asyncWriter = new AsyncWriter();
+
+        asyncWriter.setChannel(channel);
+        asyncWriter.setSubscribers(subscribers);
+        asyncWriter.setPersistent(isPersistent);
+        asyncWriter.setMessageService(messageService);
+        asyncWriter.setMessageDtoConverter(messageDtoConverter);
+
+        taskExecutor.execute(asyncWriter);
     }
 }
