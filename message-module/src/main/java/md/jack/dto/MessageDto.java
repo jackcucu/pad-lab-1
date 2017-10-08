@@ -1,18 +1,19 @@
 package md.jack.dto;
 
 import md.jack.model.ClientType;
+import md.jack.model.TransportingType;
 
 public class MessageDto
 {
     private Long id;
-
-    private String name;
 
     private String payload;
 
     private String topic;
 
     private ClientType clientType;
+
+    private TransportingType transportingType;
 
     private boolean isClosing;
 
@@ -26,26 +27,6 @@ public class MessageDto
         this.id = id;
     }
 
-    public String getTopic()
-    {
-        return topic;
-    }
-
-    public void setTopic(final String topic)
-    {
-        this.topic = topic;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    public void setName(final String name)
-    {
-        this.name = name;
-    }
-
     public String getPayload()
     {
         return payload;
@@ -56,14 +37,14 @@ public class MessageDto
         this.payload = payload;
     }
 
-    public boolean isClosing()
+    public String getTopic()
     {
-        return isClosing;
+        return topic;
     }
 
-    public void setClosing(final boolean closing)
+    public void setTopic(final String topic)
     {
-        isClosing = closing;
+        this.topic = topic;
     }
 
     public ClientType getClientType()
@@ -74,5 +55,25 @@ public class MessageDto
     public void setClientType(final ClientType clientType)
     {
         this.clientType = clientType;
+    }
+
+    public TransportingType getTransportingType()
+    {
+        return transportingType;
+    }
+
+    public void setTransportingType(final TransportingType transportingtype)
+    {
+        this.transportingType = transportingtype;
+    }
+
+    public boolean isClosing()
+    {
+        return isClosing;
+    }
+
+    public void setClosing(final boolean closing)
+    {
+        isClosing = closing;
     }
 }

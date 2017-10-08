@@ -52,7 +52,7 @@ public class Message extends AbstractEntity
 
     public void setConsumed(final boolean consumed)
     {
-        this.isConsumed = consumed;
+        isConsumed = consumed;
     }
 
     public Set<Topic> getTopics()
