@@ -94,6 +94,9 @@ public class Client implements Runnable
                                     payload.getPayload());
                             break;
                         }
+
+                        cleanUp(payload);
+
                         executeIfElse(
                                 () -> topics.containsKey(payload.getTopic()),
                                 () -> addToQueue(payload),
@@ -134,6 +137,20 @@ public class Client implements Runnable
         catch (Exception ex)
         {
             System.out.println(ex.getMessage());
+        }
+    }
+
+    private void cleanUp(final MessageDto payload)
+    {
+        if (topics.containsKey(payload.getTopic()))
+        {
+            final Tuple3<Boolean, BlockingQueue<Message>, List<Client>> queue = topics.get(payload
+                    .getTopic());
+
+            if (!queue._1() && queue._2().isEmpty() && queue._3().isEmpty())
+            {
+                topics.remove(payload.getTopic());
+            }
         }
     }
 

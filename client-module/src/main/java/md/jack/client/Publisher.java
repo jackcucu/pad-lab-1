@@ -2,6 +2,7 @@ package md.jack.client;
 
 import md.jack.marshalling.JsonMarshaller;
 import md.jack.model.MessageDto;
+import md.jack.model.TransportingType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,15 +50,9 @@ class Publisher
 
                 System.out.println("Make queue persistent(y/n) ? ");
 
-                if (reader.readLine().equalsIgnoreCase("y"))
-                {
-                    message.setTransportingType(PERSISTENT);
-                }
-                else
-                {
-                    message.setTransportingType(NON_PERSISTENT);
-                }
+                final TransportingType transportingType = getTransportingType(reader);
 
+                message.setTransportingType(transportingType);
                 message.setTopic(topic);
 
                 final String marshall = new JsonMarshaller().marshall(message);
@@ -74,6 +69,7 @@ class Publisher
                     final MessageDto payload = new MessageDto();
                     payload.setClientType(PUBLISHER);
                     payload.setTopic(topic);
+                    payload.setTransportingType(transportingType);
                     payload.setPayload(reader.readLine());
 
                     final String send = new JsonMarshaller().marshall(payload);
@@ -90,6 +86,18 @@ class Publisher
         catch (Exception exception)
         {
             LOGGER.error("Error {} with cause {}", exception.getMessage(), exception.getCause());
+        }
+    }
+
+    private TransportingType getTransportingType(final BufferedReader reader) throws IOException
+    {
+        if (reader.readLine().equalsIgnoreCase("y"))
+        {
+            return PERSISTENT;
+        }
+        else
+        {
+            return NON_PERSISTENT;
         }
     }
 
