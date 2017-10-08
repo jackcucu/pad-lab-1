@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 import static md.jack.model.ClientType.PUBLISHER;
 import static md.jack.model.ClientType.SUBSCRIBER;
@@ -126,9 +127,20 @@ public class Client implements Runnable
                             break;
                         }
 
-                        topics.entrySet().stream()
+                        final List<List<Client>> topics = this.topics.entrySet().stream()
                                 .filter(it -> it.getKey().matches(regex))
-                                .forEach(it -> it.getValue()._3().add(this));
+                                .map(Map.Entry::getValue)
+                                .map(Tuple3::_3)
+                                .collect(Collectors.toList());
+
+                        if (!topics.isEmpty())
+                        {
+                            topics.forEach(it -> it.add(this));
+                        }
+                        else
+                        {
+                            socket.close();
+                        }
                     }
                 }
             }
