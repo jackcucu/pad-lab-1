@@ -26,45 +26,33 @@ class AsyncWriter implements Runnable
     {
         while (true)
         {
-            while (!channel.isEmpty())
+            while (!channel.isEmpty() && !subscribers.isEmpty())
             {
-                while (!subscribers.isEmpty())
+                for (Client subscriber : subscribers)
                 {
-                    for (Client subscriber : subscribers)
-                    {
-                        try
-                        {
-                            final PrintWriter writer = new PrintWriter(subscriber.getSocket()
-                                    .getOutputStream(), true);
-
-                            final MessageDto message = channel.peek();
-                            final String marshall = new JsonMarshaller().marshall(message);
-
-                            writer.println(marshall);
-                            writer.flush();
-                        }
-                        catch (IOException e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                    channel.poll();
-                }
-            }
-            if (!isPersistent)
-            {
-                subscribers.forEach(it -> {
                     try
                     {
-                        it.getSocket().close();
+                        final PrintWriter writer = new PrintWriter(subscriber.getSocket()
+                                .getOutputStream(), true);
+
+                        final MessageDto message = channel.peek();
+                        final String marshall = new JsonMarshaller().marshall(message);
+
+                        writer.println(marshall);
+                        writer.flush();
                     }
                     catch (IOException e)
                     {
                         e.printStackTrace();
                     }
-                });
+                }
+                channel.poll();
+            }
+            if (!isPersistent)
+            {
                 break;
             }
         }
+        System.out.println("hello");
     }
 }

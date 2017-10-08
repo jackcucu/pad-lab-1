@@ -23,7 +23,6 @@ class Subscriber
     Subscriber(final Socket socket)
     {
         this.socket = socket;
-        setLastWillAndTestament();
     }
 
     void run()
@@ -58,6 +57,8 @@ class Subscriber
 
         final String marshall = new JsonMarshaller().marshall(payload);
         writer.println(marshall);
+
+        getRuntime().addShutdownHook(new ProcessorHook(socket, payload));
     }
 
     private String getTopic()
@@ -72,6 +73,7 @@ class Subscriber
         {
             System.out.println("Invalid topic format(org.dep.product.message_type)");
         }
+
         return topic;
     }
 

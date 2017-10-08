@@ -88,17 +88,23 @@ public class Client implements Runnable
                     }
                     else if (payload.getClientType() == SUBSCRIBER)
                     {
-                        if (payload.isClosing())
-                        {
-                            LOGGER.warn("Connection with client closed un properly last will {}", payload.getPayload());
-                            socket.close();
-                            topics.get(payload.getTopic())._3().removeIf(it -> it.equals(this));
-                            break;
-                        }
-
                         final String regex = payload.getTopic()
                                 .replace(".", "\\.")
                                 .replace("*", ".*");
+
+                        if (payload.isClosing())
+                        {
+                            LOGGER.warn("Connection with client closed un properly last will {}", payload.getPayload());
+
+                            topics.entrySet().stream()
+                                    .filter(it -> it.getKey().matches(regex))
+                                    .map(it -> it.getValue()._3)
+                                    .forEach(it -> it.removeIf(o -> o.equals(this)));
+
+                            socket.close();
+                            break;
+                        }
+
 
                         topics.entrySet().stream()
                                 .filter(it -> it.getKey().matches(regex))
@@ -120,7 +126,7 @@ public class Client implements Runnable
 
         if (!queue._1())
         {
-            taskExecutor.execute(new AsyncWriter(queue._2(), queue._3(), false));
+            taskExecutor.execute(new AsyncWriter(queue._2(), queue._3(), true));
             topics.computeIfPresent(payload.getTopic(), (key, it) -> queue.update1(true));
         }
 
@@ -152,7 +158,7 @@ public class Client implements Runnable
 
         topics.put(payload.getTopic(), Tuple.of(true, channel, subscribers));
 
-        taskExecutor.execute(new AsyncWriter(channel, subscribers, false));
+        taskExecutor.execute(new AsyncWriter(channel, subscribers, true));
 
         final Topic topic = Topic.getBuilder()
                 .name(payload.getTopic())
