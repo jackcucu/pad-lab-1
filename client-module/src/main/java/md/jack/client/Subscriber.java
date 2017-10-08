@@ -40,7 +40,10 @@ class Subscriber
             while ((message = reader.readLine()) != null)
             {
                 final MessageDto unmarshall = new JsonMarshaller().unmarshall(message);
-                System.out.println("message : " + unmarshall.getPayload());
+                if (unmarshall.getPayload() != null)
+                {
+                    System.out.println("message : " + unmarshall.getPayload());
+                }
             }
         }
         catch (Exception exception)
@@ -58,6 +61,9 @@ class Subscriber
         final String marshall = new JsonMarshaller().marshall(payload);
         writer.println(marshall);
 
+        System.out.println("Last will ?");
+
+        payload.setPayload(new Scanner(System.in).nextLine());
         getRuntime().addShutdownHook(new ProcessorHook(socket, payload));
     }
 
@@ -75,17 +81,5 @@ class Subscriber
         }
 
         return topic;
-    }
-
-    private void setLastWillAndTestament()
-    {
-        System.out.println("Last will ?");
-
-        final MessageDto payload = new MessageDto();
-        payload.setPayload(new Scanner(System.in).nextLine());
-        payload.setTopic("lastwill");
-        payload.setClientType(SUBSCRIBER);
-
-        getRuntime().addShutdownHook(new ProcessorHook(socket, payload));
     }
 }

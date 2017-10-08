@@ -60,9 +60,12 @@ class Publisher
 
                 message.setTopic(topic);
 
-                getRuntime().addShutdownHook(new ProcessorHook(socket, message));
                 final String marshall = new JsonMarshaller().marshall(message);
                 writer.println(marshall);
+
+                System.out.println("Last will ?");
+                message.setPayload(reader.readLine());
+                getRuntime().addShutdownHook(new ProcessorHook(socket, message));
 
                 while (socket.isConnected())
                 {
