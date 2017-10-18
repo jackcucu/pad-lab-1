@@ -23,6 +23,7 @@ public class ProcessorHook extends Thread
     @Override
     public void run()
     {
+        System.out.println("No topics found");
         try
         {
             final PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);

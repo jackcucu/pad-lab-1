@@ -54,6 +54,9 @@ class Subscriber
 
     private void connectToBroker(final PrintWriter writer) throws JsonProcessingException
     {
+        System.out.println("Last will ?");
+        final String lastWill = new Scanner(System.in).nextLine();
+
         final MessageDto payload = new MessageDto();
         payload.setTopic(getTopic());
         payload.setClientType(SUBSCRIBER);
@@ -61,9 +64,7 @@ class Subscriber
         final String marshall = new JsonMarshaller().marshall(payload);
         writer.println(marshall);
 
-        System.out.println("Last will ?");
-
-        payload.setPayload(new Scanner(System.in).nextLine());
+        payload.setPayload(lastWill);
         getRuntime().addShutdownHook(new ProcessorHook(socket, payload));
     }
 
