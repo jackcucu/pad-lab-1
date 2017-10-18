@@ -11,7 +11,7 @@ Message broker (`message-module/src/`);
 
 Client (`client-module/src/`);
 
-See protocol-specs for more info about client-broker communication.
+See [protocol-specs](https://github.com/jackcucu/pad-lab-1/blob/master/docs/protocol-specs.md) for more info about client-broker communication.
 
 ### Build
 
@@ -32,7 +32,7 @@ You can run the following jars:
 **Message broker** (`message-module/`);
 
 Verify if **BIND_PORT**(`see constants below`) is not already in use then
-`cd` in `target` folder and type `java -jar client-jar-with-dependecies.jar [p|s]`.
+`cd` in `target` folder and type `java -jar message-broker.jar`
 
 **Client** (`client-module/`);
 
